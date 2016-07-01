@@ -127,8 +127,6 @@ public class MainActivity extends AppCompatActivity
         CharSequence message = "Submited Successfully";
         int duration = Toast.LENGTH_SHORT;
         Toast.makeText(context , message ,duration).show();
-        {}
-
 //        try
 //        {
 //
