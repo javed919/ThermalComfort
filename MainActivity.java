@@ -1,10 +1,15 @@
 package com.example.javed.thermalcomfort;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,7 +26,10 @@ public class MainActivity extends AppCompatActivity
 
     private static SeekBar seek_bar;
     private static TextView text_view;
-    private static TextView user_id_disp;
+    private static EditText user_id;
+    private boolean threadcomplete = false;
+    private boolean connectionstatus = false;
+
 
     private static final String hostname="192.168.1.117";
     private static final int portnumber = 61000;
@@ -36,16 +44,19 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
         new Thread()
         {
             @Override
             public void run() {
 
-                try {
+                try
+                {
                     //connecting
                     Log.i(debugString, "Attempting to connect");
                     socket = new Socket(hostname, portnumber);
                     Log.i(debugString, "Connection established");
+                    connectionstatus = true;
 
                     //Send message to server
                     BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -56,9 +67,19 @@ public class MainActivity extends AppCompatActivity
                     //Receive message from server
                     BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     System.out.println("Message from the server: " + br.readLine());
-                } catch (IOException e) {
+
+
+                }
+                catch (IOException e)
+                {
 
                     Log.e(debugString, e.getMessage());
+
+                    connectionstatus = false;
+                }
+                finally
+                {
+                    threadcomplete = true;
 
                 }
             }
@@ -66,13 +87,47 @@ public class MainActivity extends AppCompatActivity
         }.start();
 
         seekbbarr();
+
+
+//        while (!threadcomplete)
+//            continue;
+//        if (connectionstatus)
+//        {
+//
+//            Toast.makeText(MainActivity.this, "Connected Successfully!", Toast.LENGTH_SHORT).show();
+//
+//        }
+//        else
+//        {
+//
+//            Toast.makeText(MainActivity.this,"Failed to Connect.", Toast.LENGTH_SHORT).show();
+//
+//        }
+
     }
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            View v = getCurrentFocus();
+            if ( v instanceof EditText) {
+                Rect outRect = new Rect();
+                v.getGlobalVisibleRect(outRect);
+                if (!outRect.contains((int)event.getRawX(), (int)event.getRawY())) {
+                    v.clearFocus();
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
+            }
+        }
+        return super.dispatchTouchEvent( event );
+    }
+
 
     public void seekbbarr()
     {
         seek_bar = (SeekBar)findViewById(R.id.seekBar);
         text_view = (TextView)findViewById(R.id.textView);
-        text_view.setText("Level: "+ (seek_bar.getProgress()-50)/10);
+        text_view.setText("Level: "+ (seek_bar.getProgress()));//-50)/10);
 
 
         seek_bar.setOnSeekBarChangeListener(
@@ -83,7 +138,7 @@ public class MainActivity extends AppCompatActivity
                     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
                     {
                         thermal_value = progress;
-                        text_view.setText("Level: "+ (progress-50)/10);
+                        text_view.setText("Level: "+ (progress));//-50)/10);
                         //    Toast.makeText(MainActivity.this,"SeekBar in Progress",Toast.LENGTH_LONG).show();
                     }
 
@@ -96,7 +151,7 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onStopTrackingTouch(SeekBar seekBar)
                     {
-                        text_view.setText("Level: "+ (thermal_value-50)/10);
+                        text_view.setText("Level: "+ (thermal_value));//-50)/10);
                         //   Toast.makeText(MainActivity.this,"SeekBar in StopTracking",Toast.LENGTH_LONG).show();
                     }
                 }
@@ -107,44 +162,38 @@ public class MainActivity extends AppCompatActivity
     {
         BufferedWriter bw = null;
         BufferedReader br = null;
+        user_id = (EditText) findViewById(R.id.editText);
+
+
         //Send message to server
-        try
+        if (connectionstatus)
         {
-            //Send data tp server
-            String level = String.valueOf(seek_bar.getProgress());
-            bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            bw.write("Level: " + level);
-            bw.newLine();
-            bw.flush();
+
+            try {
+
+                //Send data to server
+                String level = String.valueOf(seek_bar.getProgress());
+                bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                bw.write(user_id.getText().toString() + " " + level);
+                bw.newLine();
+                bw.flush();
+
+                //Show "Submitted Successfully" message
+                Toast.makeText(MainActivity.this, "Submitted Successfully", Toast.LENGTH_SHORT).show();
+
+            } catch (IOException e) {
+                Log.e(debugString, e.getMessage());
+
+                //Show "failed to connect" message
+                Toast.makeText(MainActivity.this, "Failed to connect", Toast.LENGTH_SHORT).show();
+            }
         }
-        catch (IOException e)
+        else
         {
-            Log.e(debugString, e.getMessage());
+
+            Toast.makeText(MainActivity.this, "Failed to Connect.", Toast.LENGTH_SHORT).show();
+
         }
-
-
-        Context context = MainActivity.this;
-        CharSequence message = "Submited Successfully";
-        int duration = Toast.LENGTH_SHORT;
-        Toast.makeText(context , message ,duration).show();
-//        try
-//        {
-//
-//            br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            if (br==null)
-//            {
-//
-//                Toast.makeText(MainActivity.this , "Failed to connect"",Toast.LENGTH_SHORT).show();
-//
-//            }
-//
-//        }
-//        catch (IOException e)
-//        {
-//
-//            Log.e(debugString, e.getMessage());
-//
-//        }
 
     }
 
