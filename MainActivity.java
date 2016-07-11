@@ -59,10 +59,10 @@ public class MainActivity extends AppCompatActivity
                     connectionstatus = true;
 
                     //Send message to server
-                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                    bw.write("This is a message from client.");
-                    bw.newLine();
-                    bw.flush();
+//                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+//                    bw.write("This is a message from client.");
+//                    bw.newLine();
+//                    bw.flush();
 
                     //Receive message from server
                     BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity
                 //Send data to server
                 String level = String.valueOf(seek_bar.getProgress());
                 bw = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                bw.write(user_id.getText().toString() + " " + level);
+                bw.write(user_id.getText().toString() + "\t" + level);
                 bw.newLine();
                 bw.flush();
 
